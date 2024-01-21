@@ -1,5 +1,5 @@
 [package]
-name = "ocr_test"
+name = "paddleocr_rs"
 version = "0.1.0"
 edition = "2021"
 description = "paddleocr-v4 onnxrumtime infer"
