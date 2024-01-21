@@ -2,7 +2,12 @@
 name = "ocr_test"
 version = "0.1.0"
 edition = "2021"
-
+description = "paddleocr-v4 onnxrumtime infer"
+license = "AGPL-3.0"
+homepage = "https://github.com/yuanyan3060/paddleocr_rs"
+repository = "https://github.com/yuanyan3060/paddleocr_rs"
+readme = "README.md"
+keywords = ["paddle", "ocr", "onnx"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

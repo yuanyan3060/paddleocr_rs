@@ -1,2 +1,2 @@
 # paddleocr_rs
-rust paddleocrv4库
+rust paddleocr-v4推理库
