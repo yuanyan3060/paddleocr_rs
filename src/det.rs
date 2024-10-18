@@ -19,7 +19,7 @@ impl Det {
     }
 
     pub fn from_file(model_path: impl AsRef<Path>) -> PaddleOcrResult<Self> {
-        let model = ort::SessionBuilder::new()?.with_model_from_file(model_path)?;
+        let model = ort::SessionBuilder::new()?.commit_from_file(model_path)?;
         Ok(Self { model, rect_border_size: Self::RECT_BORDER_SIZE })
     }
 
@@ -64,7 +64,7 @@ impl Det {
         let outputs = self.model.run(inputs!["x" => input.view()]?)?;
         let output = outputs.iter().next().ok_or(PaddleOcrError::custom("no output"))?.1;
         let output = output
-            .extract_tensor::<f32>()?
+            .try_extract_tensor::<f32>()?
             .view()
             .t()
             .to_owned();

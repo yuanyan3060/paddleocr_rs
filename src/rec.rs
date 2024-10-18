@@ -19,7 +19,7 @@ impl Rec {
     }
 
     pub fn from_file(model_path: impl AsRef<Path>, keys_path: impl AsRef<Path>) -> PaddleOcrResult<Self> {
-        let model = ort::SessionBuilder::new()?.with_model_from_file(model_path)?;
+        let model = ort::SessionBuilder::new()?.commit_from_file(model_path)?;
         let keys = " ".chars()
             .chain(std::fs::read_to_string(keys_path)?
             .chars()
@@ -67,7 +67,7 @@ impl Rec {
     fn run_model(&self, input: &ArrayBase<OwnedRepr<f32>, Dim<[usize; 4]>>) -> PaddleOcrResult<Vec<(char, f32)>>{
         let outputs = self.model.run(inputs!["x" => input.view()]?)?;
         let output = outputs.iter().next().ok_or(PaddleOcrError::custom("no output"))?.1;
-        let output = output.extract_tensor::<f32>()?;
+        let output = output.try_extract_tensor::<f32>()?;
         let output = output.view();
         let output = output.slice(s![0, .., ..]);
         let output = output.axis_iter(Axis(0))

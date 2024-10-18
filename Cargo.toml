@@ -11,8 +11,8 @@ keywords = ["paddle", "ocr", "onnx"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-image = "0.24.8"
-imageproc = "0.23.0"
-ndarray = "0.15.6"
-ort = { version = "2.0.0-alpha.4" }
+image = "0.25"
+imageproc = "0.25"
+ndarray = "0.16"
+ort = { version = "2.0.0-rc.6" }
 thiserror = "1.0.56"
