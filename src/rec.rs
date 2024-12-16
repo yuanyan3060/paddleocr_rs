@@ -1,8 +1,8 @@
 use std::{path::Path, borrow::Cow};
 use image::{DynamicImage, GenericImageView};
 use ndarray::{Array, ArrayBase, Dim, OwnedRepr, Axis, s};
-use ort::{inputs, Session};
-
+use ort::inputs;
+use ort::session::{builder::SessionBuilder, Session};
 use crate::{error::PaddleOcrResult, PaddleOcrError};
 
 pub struct Rec {
@@ -19,7 +19,7 @@ impl Rec {
     }
 
     pub fn from_file(model_path: impl AsRef<Path>, keys_path: impl AsRef<Path>) -> PaddleOcrResult<Self> {
-        let model = ort::SessionBuilder::new()?.commit_from_file(model_path)?;
+        let model = SessionBuilder::new()?.commit_from_file(model_path)?;
         let keys = " ".chars()
             .chain(std::fs::read_to_string(keys_path)?
             .chars()

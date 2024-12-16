@@ -2,7 +2,8 @@ use std::path::Path;
 use image::{DynamicImage, GenericImageView, Luma, GrayImage};
 use imageproc::{rect::Rect, point::Point};
 use ndarray::{Array, ArrayBase, Dim, OwnedRepr};
-use ort::{inputs, Session};
+use ort::inputs;
+use ort::session::{builder::SessionBuilder, Session};
 
 use crate::{error::PaddleOcrResult, PaddleOcrError};
 
@@ -19,7 +20,7 @@ impl Det {
     }
 
     pub fn from_file(model_path: impl AsRef<Path>) -> PaddleOcrResult<Self> {
-        let model = ort::SessionBuilder::new()?.commit_from_file(model_path)?;
+        let model = SessionBuilder::new()?.commit_from_file(model_path)?;
         Ok(Self { model, rect_border_size: Self::RECT_BORDER_SIZE })
     }
 
