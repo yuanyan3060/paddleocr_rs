@@ -12,8 +12,8 @@ mod tests {
 
     #[test]
     fn it_works() -> Result<(), Box<dyn std::error::Error>> {
-        let det = Det::from_file("./models/ch_PP-OCRv4_det_infer.onnx")?;
-        let rec = Rec::from_file(
+        let mut det = Det::from_file("./models/ch_PP-OCRv4_det_infer.onnx")?;
+        let mut rec = Rec::from_file(
             "./models/ch_PP-OCRv4_rec_infer.onnx",
             "./models/ppocr_keys_v1.txt",
         )?;

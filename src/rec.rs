@@ -2,6 +2,7 @@ use std::{path::Path, borrow::Cow};
 use image::{DynamicImage, GenericImageView};
 use ndarray::{Array, ArrayBase, Dim, OwnedRepr, Axis, s};
 use ort::inputs;
+use ort::value::TensorRef;
 use ort::session::{builder::SessionBuilder, Session};
 use crate::{error::PaddleOcrResult, PaddleOcrError};
 
@@ -34,13 +35,13 @@ impl Rec {
         self
     }
 
-    pub fn predict_char_score(&self, img: &DynamicImage) -> PaddleOcrResult<Vec<(char, f32)>> {
+    pub fn predict_char_score(&mut self, img: &DynamicImage) -> PaddleOcrResult<Vec<(char, f32)>> {
         let input = Self::preprocess(img)?;
         let output = self.run_model(&input)?;
         Ok(output)
     }
 
-    pub fn predict_str(&self, img: &DynamicImage) -> PaddleOcrResult<String> {
+    pub fn predict_str(&mut self, img: &DynamicImage) -> PaddleOcrResult<String> {
         let ret = self.predict_char_score(img)?;
         Ok(ret.into_iter().map(|x| x.0).collect())
     }
@@ -64,24 +65,18 @@ impl Rec {
         Ok(input)
     }
 
-    fn run_model(&self, input: &ArrayBase<OwnedRepr<f32>, Dim<[usize; 4]>>) -> PaddleOcrResult<Vec<(char, f32)>>{
-        let outputs = self.model.run(inputs!["x" => input.view()]?)?;
+    fn run_model(&mut self, input: &ArrayBase<OwnedRepr<f32>, Dim<[usize; 4]>>) -> PaddleOcrResult<Vec<(char, f32)>>{
+        let outputs = self.model.run(inputs!["x" => TensorRef::from_array_view(input)? ])?;
+
         let output = outputs.iter().next().ok_or(PaddleOcrError::custom("no output"))?.1;
-        let output = output.try_extract_tensor::<f32>()?;
-        let output = output.view();
+        let output = output.try_extract_array::<f32>()?.into_owned();
         let output = output.slice(s![0, .., ..]);
         let output = output.axis_iter(Axis(0))
             .filter_map(|x| {
-                x.iter().copied().enumerate().max_by(|(_, x), (_, y)|{
-                    x.total_cmp(y)
-                })
+                x.iter().copied().enumerate().max_by(|(_,x),(_,y)| x.total_cmp(y))
             })
-            .filter(|(index, score)|{
-                *index != 0 && *score > self.min_score
-            })
-            .filter_map(|(index, score)|{
-                self.keys.get(index).map(|x| (*x, score))
-            })
+            .filter(|(index,score)| *index != 0 && *score > self.min_score )
+            .filter_map(|(index,score)| self.keys.get(index).map(|x| (*x,score) ))
             .collect();
         Ok(output)
     }

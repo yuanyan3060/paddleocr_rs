@@ -3,6 +3,7 @@ use image::{DynamicImage, GenericImageView, Luma, GrayImage};
 use imageproc::{rect::Rect, point::Point};
 use ndarray::{Array, ArrayBase, Dim, OwnedRepr};
 use ort::inputs;
+use ort::value::TensorRef;
 use ort::session::{builder::SessionBuilder, Session};
 
 use crate::{error::PaddleOcrResult, PaddleOcrError};
@@ -29,13 +30,13 @@ impl Det {
         self
     }
 
-    pub fn find_text_rect(&self, img: &DynamicImage) -> PaddleOcrResult<Vec<Rect>> {
+    pub fn find_text_rect(&mut self, img: &DynamicImage) -> PaddleOcrResult<Vec<Rect>> {
         let input = Self::preprocess(img)?;
         let output = self.run_model(&input, img.width(), img.height())?;
         Ok(self.find_box(&output))
     }
 
-    pub fn find_text_img(&self, img: &DynamicImage) -> PaddleOcrResult<Vec<DynamicImage>> {
+    pub fn find_text_img(&mut self, img: &DynamicImage) -> PaddleOcrResult<Vec<DynamicImage>> {
         Ok(self.find_text_rect(img)?
             .iter()
             .map(|r| img.crop_imm(r.left() as u32, r.top() as u32, r.width(), r.height()))
@@ -60,15 +61,12 @@ impl Det {
         Ok(input)
     }
 
-    fn run_model(&self, input: &ArrayBase<OwnedRepr<f32>, Dim<[usize; 4]>>, width: u32, height: u32) -> PaddleOcrResult<GrayImage>{
+    fn run_model(&mut self, input: &ArrayBase<OwnedRepr<f32>, Dim<[usize; 4]>>, width: u32, height: u32) -> PaddleOcrResult<GrayImage>{
         let pad_h = Self::get_pad_length(height);
-        let outputs = self.model.run(inputs!["x" => input.view()]?)?;
+        let outputs = self.model.run(inputs!["x" => TensorRef::from_array_view(input.view())?  ])?;
         let output = outputs.iter().next().ok_or(PaddleOcrError::custom("no output"))?.1;
-        let output = output
-            .try_extract_tensor::<f32>()?
-            .view()
-            .t()
-            .to_owned();
+        let output = output.try_extract_array::<f32>()?.t().into_owned();
+        
         let output: Vec<_> = output.iter().collect();
         let img = image::ImageBuffer::from_fn(width, height, |x, y| {
             Luma([(*output[(x * pad_h + y) as usize] * 255.0).min(255.0) as u8])
